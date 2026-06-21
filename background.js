@@ -124,7 +124,7 @@ function isSafeSchoolUrl(urlStr) {
 }
 
 // =================================================
-// LYTTER: Modtag spil- og proxy-alarmer fra content scripts
+// LYTTER: Modtag spil
 // =================================================
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "violationDetected") {
