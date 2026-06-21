@@ -37,11 +37,7 @@ async function updateRules() {
   const sheetMode = config.sheetMode || 'daily';
   const csvUrl = (sheetMode === 'exam') ? config.examCsvUrl : config.dailyCsvUrl;
   
-  // Bestem hvor eleven skal sendes hen ved blokering
-  let redirectUrl = chrome.runtime.getURL('blocked.html');
-  if (config.blockedPageMode === 'external' && config.blockedPageUrl) {
-    redirectUrl = config.blockedPageUrl;
-  }
+  const redirectUrl = chrome.runtime.getURL('blocked.html');
 
   const sites = await fetchBlockedSites(csvUrl);
   if (sites.length === 0) return;
@@ -62,7 +58,7 @@ async function updateRules() {
       },
       condition: {
         regexFilter: regexPattern,
-        resourceTypes: ['main_frame']
+        resourceTypes: ['main_frame'] // Bloker kun selve sidevisningen
       }
     };
   });
@@ -102,7 +98,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 startLoop();
 
 // =================================================
-// SIKKEHEDSNET: Godkendte skolesider
+// SIKKERHEDSNET: Godkendte skolesider
 // =================================================
 function isSafeSchoolUrl(urlStr) {
     if (!urlStr) return false;
@@ -128,7 +124,7 @@ function isSafeSchoolUrl(urlStr) {
 }
 
 // =================================================
-// LYTTER: Modtag spil
+// LYTTER: Modtag spil- og proxy-alarmer fra content scripts
 // =================================================
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "violationDetected") {
@@ -143,14 +139,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (sender.tab && sender.tab.id) {
       console.log(` LetSpær: Blokerer ${sender.tab.url} (Årsag: ${message.reason})`);
       
-      // Hent blokeret side indstillinger fra Google Admin config
-      chrome.storage.managed.get(['blockedPageMode', 'blockedPageUrl'], (config) => {
-        let redirectUrl = chrome.runtime.getURL('blocked.html');
-        if (config && config.blockedPageMode === 'external' && config.blockedPageUrl) {
-          redirectUrl = config.blockedPageUrl;
-        }
-        chrome.tabs.update(sender.tab.id, { url: redirectUrl });
-      });
+      chrome.tabs.update(sender.tab.id, { url: chrome.runtime.getURL('blocked.html') });
     }
   }
 });
